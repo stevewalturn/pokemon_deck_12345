@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import 'package:pokemon_deck/ui/common/ui_helpers.dart';
 import 'package:pokemon_deck/ui/views/home/home_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
@@ -13,70 +13,89 @@ class HomeView extends StackedView<HomeViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Gap(50),
-                Column(
-                  children: [
-                    const Text(
-                      'Hello from STEVE x STACKED!',
-                      style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Gap(25),
-                    MaterialButton(
-                      color: Colors.black,
-                      onPressed: viewModel.incrementCounter,
-                      child: Text(
-                        viewModel.counterLabel,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MaterialButton(
-                      color: Colors.grey,
-                      onPressed: viewModel.showDialog,
-                      child: const Text(
-                        'Show Dialog',
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    MaterialButton(
-                      color: Colors.grey,
-                      onPressed: viewModel.showBottomSheet,
-                      child: const Text(
-                        'Show Bottom Sheet',
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        title: const Text('Pokemon Deck Builder'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: viewModel.navigateToCardSearch,
           ),
-        ),
+        ],
+      ),
+      body: viewModel.isBusy
+          ? const Center(child: CircularProgressIndicator())
+          : viewModel.hasError
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        viewModel.modelError.toString(),
+                        textAlign: TextAlign.center,
+                      ),
+                      verticalSpaceMedium,
+                      ElevatedButton(
+                        onPressed: viewModel.refreshDecks,
+                        child: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: viewModel.refreshDecks,
+                  child: viewModel.decks.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'No decks yet!\nTap the + button to create your first deck.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              verticalSpaceMedium,
+                              ElevatedButton(
+                                onPressed: viewModel.navigateToCreateDeck,
+                                child: const Text('Create New Deck'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: viewModel.decks.length,
+                          separatorBuilder: (context, index) =>
+                              verticalSpaceSmall,
+                          itemBuilder: (context, index) {
+                            final deck = viewModel.decks[index];
+                            return Card(
+                              child: ListTile(
+                                title: Text(deck.name),
+                                subtitle: Text(
+                                  '${deck.cards.length} cards • Last updated: ${_formatDate(deck.updatedAt)}',
+                                ),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () =>
+                                    viewModel.navigateToEditDeck(deck.id),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: viewModel.navigateToCreateDeck,
+        child: const Icon(Icons.add),
       ),
     );
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   @override
-  HomeViewModel viewModelBuilder(
-    BuildContext context,
-  ) =>
-      HomeViewModel();
+  HomeViewModel viewModelBuilder(BuildContext context) => HomeViewModel();
+
+  @override
+  void onViewModelReady(HomeViewModel viewModel) => viewModel.initialize();
 }
