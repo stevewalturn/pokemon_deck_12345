@@ -1,7 +1,7 @@
 {
   "package_name": "com.yeah_well.pokemon_deck",
-  "project_description": "The Flutter application follows the Stacked architecture, featuring routing, dependency injection, and dialog/bottom sheet management. It includes a startup screen, a home screen with a counter, a dialog, and a bottom sheet. The application also integrates with Firebase for analytics tracking and supports localization and multiple flavors (development and production).",
-  "architecture_overview": "The application is structured using the Stacked architecture, which separates the concerns of the UI, view models, and services. It uses Stacked for state management, routing, and dependency injection. The main components include the App, AppView, and various feature-specific views and view models. The application also utilizes services for managing dialogs, bottom sheets, and navigation, as well as observing screen transitions for analytics purposes.",
+  "project_description": "A Pok\u00e9mon trading card management application that enables users to search, explore, and build custom decks of Pok\u00e9mon cards. Key features include comprehensive card search with advanced filtering, detailed card information viewing, deck creation and management, and interactive card collection exploration. The app leverages the Pok\u00e9mon Trading Card Game API to provide real-time card data and supports local deck storage using SharedPreferences.",
+  "architecture_overview": "Built using the Stacked architecture with a modular, feature-driven design. Utilizes dependency injection via GetIt, state management through Stacked ViewModels, and service-based architecture for separation of concerns. Implements repository pattern for data management, services for external API interactions, and follows MVVM design principles. Supports multiple environments with flavor-based configuration.",
   "files": [
     {
       "name": "lib/app/app.dart",
@@ -840,6 +840,523 @@
         "package:stacked/stacked.dart",
         "package:stacked_services/stacked_services.dart"
       ]
+    },
+    {
+      "name": "lib/features/card_search/widgets/search_filters.dart",
+      "description": "A Flutter widget that provides a user interface for filtering Pokemon cards by type and rarity, enabling users to narrow down their card search with intuitive dropdown menus",
+      "class_diagram": "@startuml\nclass SearchFilters {\n  +types: List<String>\n  +rarities: List<String>\n  +selectedType: String?\n  +selectedRarity: String?\n  +onTypeSelected: Function(String?)\n  +onRaritySelected: Function(String?)\n  +build(context: BuildContext): Widget\n}\n@enduml",
+      "methods": [
+        {
+          "name": "build",
+          "description": "Constructs the UI for type and rarity filter dropdowns",
+          "parameters": [
+            "BuildContext context"
+          ],
+          "return_type": "Widget"
+        }
+      ],
+      "dependencies": [
+        "flutter/material.dart",
+        "ui/common/app_colors.dart",
+        "ui/common/ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/features/deck/deck_view.dart",
+      "description": "A Flutter view for managing Pok\u00e9mon card decks, allowing users to create, edit, view, and delete decks with detailed card management capabilities",
+      "class_diagram": "@startuml\nclass DeckView {\n  -String? deckId\n  +builder(BuildContext, DeckViewModel)\n  +viewModelBuilder(BuildContext)\n  +onViewModelReady(DeckViewModel)\n}\n@enduml",
+      "methods": [
+        {
+          "name": "builder",
+          "description": "Constructs the UI for deck management, displaying deck details, card list, and interaction controls",
+          "parameters": [
+            "BuildContext",
+            "DeckViewModel",
+            "Widget?"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "viewModelBuilder",
+          "description": "Creates a DeckViewModel instance for managing deck state and operations",
+          "parameters": [
+            "BuildContext"
+          ],
+          "return_type": "DeckViewModel"
+        },
+        {
+          "name": "onViewModelReady",
+          "description": "Initializes the deck view model when the view is first loaded",
+          "parameters": [
+            "DeckViewModel"
+          ],
+          "return_type": null
+        }
+      ],
+      "dependencies": [
+        "flutter/material.dart",
+        "stacked/stacked.dart",
+        "deck_viewmodel.dart",
+        "widgets/card_list_item.dart",
+        "widgets/deck_stats.dart",
+        "ui/common/ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/features/card_search/card_search_view.dart",
+      "description": "Provides a comprehensive UI for searching Pok\u00e9mon trading cards with advanced filtering and dynamic result display. Enables users to discover and explore card collections through an interactive search interface.",
+      "class_diagram": "@startuml\nclass CardSearchView {\n  +builder(context, viewModel, child)\n  +viewModelBuilder(context)\n  +onViewModelReady(viewModel)\n}\nclass CardSearchViewModel {\n  +searchCards()\n  +updateSearchQuery(query)\n  +updateSelectedType(type)\n  +updateSelectedRarity(rarity)\n  +clearFilters()\n  +navigateToCardDetails(cardId)\n}\n@enduml",
+      "methods": [
+        {
+          "name": "builder",
+          "description": "Constructs the main search view UI with search input, filters, and dynamic results grid",
+          "parameters": [
+            "context",
+            "viewModel",
+            "child"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "viewModelBuilder",
+          "description": "Creates the view model instance for managing search state and logic",
+          "parameters": [
+            "context"
+          ],
+          "return_type": "CardSearchViewModel"
+        },
+        {
+          "name": "onViewModelReady",
+          "description": "Initializes the view model when the view is first created",
+          "parameters": [
+            "viewModel"
+          ],
+          "return_type": null
+        }
+      ],
+      "dependencies": [
+        "package:flutter/material.dart",
+        "package:stacked/stacked.dart",
+        "card_search_viewmodel.dart",
+        "search_filters.dart",
+        "ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/features/deck/deck_viewmodel.dart",
+      "description": "A ViewModel for managing Pokemon deck operations, providing state management and business logic for creating, editing, deleting, and interacting with decks in a Pokemon card collection application",
+      "class_diagram": "@startuml\nclass DeckViewModel {\n  -TextEditingController nameController\n  -TextEditingController descriptionController\n  +Future<void> initialize()\n  +Future<void> saveDeck()\n  +Future<void> deleteDeck()\n  +Future<void> removeCardFromDeck()\n  +void navigateToCardSearch()\n}\n@enduml",
+      "methods": [
+        {
+          "name": "initialize",
+          "description": "Loads deck details when editing an existing deck, populating text controllers with current deck data",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "saveDeck",
+          "description": "Creates or updates a Pokemon deck with validated name and description, persisting changes to repository",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "deleteDeck",
+          "description": "Removes a deck after user confirmation, handling deletion through repository",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "removeCardFromDeck",
+          "description": "Removes a specific card from the current deck, updating deck state",
+          "parameters": [
+            "cardId"
+          ],
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "navigateToCardSearch",
+          "description": "Navigates user to card search interface for adding cards to deck",
+          "parameters": null,
+          "return_type": "void"
+        }
+      ],
+      "dependencies": [
+        "stacked/stacked.dart",
+        "pokemon_deck/features/deck/deck_repository.dart",
+        "stacked_services/stacked_services.dart",
+        "uuid/uuid.dart"
+      ]
+    },
+    {
+      "name": "lib/features/card_search/card_search_viewmodel.dart",
+      "description": "A ViewModel for managing Pok\u00e9mon card search functionality that provides dynamic filtering and search capabilities for users to find specific Pok\u00e9mon cards based on various criteria",
+      "class_diagram": "@startuml\nclass CardSearchViewModel {\n  -_pokemonApiService: PokemonApiService\n  -_searchResults: List<PokemonCard>\n  -_types: List<String>\n  -_rarities: List<String>\n  +initialize(): Future<void>\n  +searchCards(): Future<void>\n  +updateSearchQuery(query: String)\n  +updateSelectedType(type: String?)\n  +updateSelectedRarity(rarity: String?)\n  +clearFilters()\n}\n@enduml",
+      "methods": [
+        {
+          "name": "initialize",
+          "description": "Loads initial filter options like card types and rarities from the Pokemon API",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "searchCards",
+          "description": "Performs a search for Pok\u00e9mon cards using user-specified query, type, and rarity filters",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "clearFilters",
+          "description": "Resets all search filters and clears the current search results",
+          "parameters": null,
+          "return_type": "void"
+        },
+        {
+          "name": "updateSearchQuery",
+          "description": "Updates the current search query text",
+          "parameters": [
+            "query"
+          ],
+          "return_type": "void"
+        },
+        {
+          "name": "updateSelectedType",
+          "description": "Sets the selected Pok\u00e9mon card type filter",
+          "parameters": [
+            "type"
+          ],
+          "return_type": "void"
+        },
+        {
+          "name": "updateSelectedRarity",
+          "description": "Sets the selected Pok\u00e9mon card rarity filter",
+          "parameters": [
+            "rarity"
+          ],
+          "return_type": "void"
+        }
+      ],
+      "dependencies": [
+        "pokemon_api_service.dart",
+        "pokemon_card.dart",
+        "stacked/stacked.dart"
+      ]
+    },
+    {
+      "name": "lib/features/deck/widgets/card_list_item.dart",
+      "description": "A reusable Flutter widget that renders a card list item for a Pokemon card, displaying core card details and providing interactive capabilities like tap and remove actions.",
+      "class_diagram": "@startuml\nclass CardListItem {\n  - PokemonCard card\n  - VoidCallback onTap\n  - VoidCallback onRemove\n  + Widget build(BuildContext context)\n}\n@enduml",
+      "methods": [
+        {
+          "name": "build",
+          "description": "Constructs a Card widget with Pokemon card details, thumbnail image, and interaction capabilities",
+          "parameters": [
+            "BuildContext context"
+          ],
+          "return_type": "Widget"
+        }
+      ],
+      "dependencies": [
+        "package:flutter/material.dart",
+        "package:pokemon_deck/models/pokemon_card.dart",
+        "package:pokemon_deck/ui/common/ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/features/deck/widgets/deck_stats.dart",
+      "description": "A widget that displays statistical insights about a Pok\u00e9mon deck, providing visual analytics around card composition, type distribution, and average HP to help players understand their deck's characteristics",
+      "class_diagram": "@startuml\nclass DeckStats {\n  - PokemonDeck deck\n  + build(BuildContext context): Widget\n  - _calculateTypeDistribution(): Map<String, int>\n  - _calculateAverageHP(): double\n}\n@enduml",
+      "methods": [
+        {
+          "name": "build",
+          "description": "Renders a Card widget displaying comprehensive deck statistics including total cards, average HP, and type distribution",
+          "parameters": [
+            "BuildContext context"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "_calculateTypeDistribution",
+          "description": "Analyzes the deck's cards and computes the frequency of each Pok\u00e9mon type, sorted in descending order",
+          "parameters": null,
+          "return_type": "Map<String, int>"
+        },
+        {
+          "name": "_calculateAverageHP",
+          "description": "Calculates the mean hit points across all cards in the deck, handling empty deck scenarios",
+          "parameters": null,
+          "return_type": "double"
+        }
+      ],
+      "dependencies": [
+        "package:flutter/material.dart",
+        "package:pokemon_deck/models/pokemon_deck.dart",
+        "package:pokemon_deck/ui/common/ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/models/pokemon_card.dart",
+      "description": "A data model representing Pok\u00e9mon card details, providing a structured representation of Pok\u00e9mon cards with comprehensive metadata for a Pok\u00e9mon trading card application. It enables parsing, serialization, and management of complex card information.",
+      "class_diagram": "@startuml\nclass PokemonCard {\n  +id: String\n  +name: String\n  +imageUrl: String\n  +hp: int\n  +fromJson(): PokemonCard\n  +toJson(): Map<String, dynamic>\n}\nclass Attack {\n  +name: String\n  +damage: String\n  +fromJson(): Attack\n}\nclass Weakness {\n  +type: String\n  +value: String\n}\nclass Resistance {\n  +type: String\n  +value: String\n}\nPokemonCard *-- Attack\nPokemonCard *-- Weakness\nPokemonCard *-- Resistance\n@enduml",
+      "methods": [
+        {
+          "name": "PokemonCard.fromJson",
+          "description": "Converts JSON data into a structured PokemonCard object, enabling data parsing from external sources",
+          "parameters": [
+            "Map<String, dynamic>"
+          ],
+          "return_type": "PokemonCard"
+        },
+        {
+          "name": "PokemonCard.toJson",
+          "description": "Serializes a PokemonCard object back into a JSON-compatible map for storage or transmission",
+          "parameters": null,
+          "return_type": "Map<String, dynamic>"
+        }
+      ],
+      "dependencies": [
+        "package:equatable/equatable.dart"
+      ]
+    },
+    {
+      "name": "lib/models/pokemon_deck.dart",
+      "description": "A data model representing a Pokemon card deck, enabling structured organization and management of Pokemon cards with metadata about creation, updates, and deck details",
+      "class_diagram": "@startuml\nclass PokemonDeck {\n  +String id\n  +String name\n  +String description\n  +List<PokemonCard> cards\n  +DateTime createdAt\n  +DateTime updatedAt\n  +fromJson(Map<String, dynamic> json)\n  +toJson()\n  +copyWith()\n}\n@enduml",
+      "methods": [
+        {
+          "name": "fromJson",
+          "description": "Creates a PokemonDeck instance from a JSON map, enabling deserialization of deck data",
+          "parameters": [
+            "Map<String, dynamic> json"
+          ],
+          "return_type": "PokemonDeck"
+        },
+        {
+          "name": "toJson",
+          "description": "Converts the PokemonDeck instance into a JSON-serializable map for storage or transmission",
+          "parameters": null,
+          "return_type": "Map<String, dynamic>"
+        },
+        {
+          "name": "copyWith",
+          "description": "Creates a new PokemonDeck instance with optional field updates, supporting immutable state management",
+          "parameters": [
+            "String? id",
+            "String? name",
+            "String? description",
+            "List<PokemonCard>? cards",
+            "DateTime? createdAt",
+            "DateTime? updatedAt"
+          ],
+          "return_type": "PokemonDeck"
+        }
+      ],
+      "dependencies": [
+        "package:equatable/equatable.dart",
+        "pokemon_deck/models/pokemon_card.dart"
+      ]
+    },
+    {
+      "name": "lib/services/pokemon_api_service.dart",
+      "description": "A service class that provides comprehensive access to the Pokemon Trading Card Game API, enabling searching, retrieving, and filtering of Pokemon cards with robust error handling and API interaction management.",
+      "class_diagram": "@startuml\nclass PokemonApiService {\n  -String baseUrl\n  -String apiKey\n  -http.Client _client\n  +Future<void> init()\n  +Future<List<PokemonCard>> searchCards()\n  +Future<PokemonCard> getCardById()\n  +Future<List<String>> getTypes()\n  +Future<List<String>> getRarities()\n}\n@enduml",
+      "methods": [
+        {
+          "name": "init",
+          "description": "Validates API connection and key, ensuring service is ready for use",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "searchCards",
+          "description": "Searches Pokemon cards with flexible filtering options, supporting pagination and multiple search criteria",
+          "parameters": [
+            "query",
+            "types",
+            "subtypes",
+            "rarity",
+            "page",
+            "pageSize"
+          ],
+          "return_type": "Future<List<PokemonCard>>"
+        },
+        {
+          "name": "getCardById",
+          "description": "Retrieves a specific Pokemon card by its unique identifier",
+          "parameters": [
+            "id"
+          ],
+          "return_type": "Future<PokemonCard>"
+        },
+        {
+          "name": "getTypes",
+          "description": "Fetches all available Pokemon card types from the API",
+          "parameters": null,
+          "return_type": "Future<List<String>>"
+        },
+        {
+          "name": "getRarities",
+          "description": "Retrieves all possible Pokemon card rarity levels",
+          "parameters": null,
+          "return_type": "Future<List<String>>"
+        }
+      ],
+      "dependencies": [
+        "dart:convert",
+        "package:http/http.dart",
+        "package:pokemon_deck/models/pokemon_card.dart",
+        "package:stacked/stacked_annotations.dart"
+      ]
+    },
+    {
+      "name": "lib/features/deck/deck_repository.dart",
+      "description": "A repository for managing Pokemon card decks, providing persistent storage and CRUD operations for deck and card management using SharedPreferences as a local storage mechanism",
+      "class_diagram": "@startuml\nclass DeckRepository {\n  -SharedPreferences _prefs\n  +Future<List<PokemonDeck>> getAllDecks()\n  +Future<void> saveDeck(PokemonDeck deck)\n  +Future<void> deleteDeck(String deckId)\n  +Future<void> addCardToDeck(String deckId, PokemonCard card)\n  +Future<void> removeCardFromDeck(String deckId, String cardId)\n}\n@enduml",
+      "methods": [
+        {
+          "name": "getAllDecks",
+          "description": "Retrieves all saved Pokemon decks from local storage",
+          "parameters": null,
+          "return_type": "Future<List<PokemonDeck>>"
+        },
+        {
+          "name": "saveDeck",
+          "description": "Saves a new deck or updates an existing deck in local storage",
+          "parameters": [
+            "PokemonDeck deck"
+          ],
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "deleteDeck",
+          "description": "Removes a specific deck from local storage by its ID",
+          "parameters": [
+            "String deckId"
+          ],
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "addCardToDeck",
+          "description": "Adds a Pokemon card to a specific deck and updates its timestamp",
+          "parameters": [
+            "String deckId",
+            "PokemonCard card"
+          ],
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "removeCardFromDeck",
+          "description": "Removes a specific card from a deck and updates its timestamp",
+          "parameters": [
+            "String deckId",
+            "String cardId"
+          ],
+          "return_type": "Future<void>"
+        }
+      ],
+      "dependencies": [
+        "shared_preferences.dart",
+        "dart:convert",
+        "pokemon_card.dart",
+        "pokemon_deck.dart"
+      ]
+    },
+    {
+      "name": "lib/features/card_details/card_details_view.dart",
+      "description": "A Flutter view for displaying detailed information about a Pok\u00e9mon card, providing a comprehensive and user-friendly interface for viewing card-specific attributes and metadata",
+      "class_diagram": "@startuml\nclass CardDetailsView {\n  - cardId: String\n  + builder(context, viewModel)\n  + viewModelBuilder(context)\n  + onViewModelReady(viewModel)\n  - _buildInfoSection()\n  - _buildInfoRow()\n}\n@enduml",
+      "methods": [
+        {
+          "name": "builder",
+          "description": "Constructs the main UI for displaying card details, handling loading, error, and success states",
+          "parameters": [
+            "BuildContext",
+            "CardDetailsViewModel",
+            "Widget?"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "viewModelBuilder",
+          "description": "Creates the associated view model for managing card details data and logic",
+          "parameters": [
+            "BuildContext"
+          ],
+          "return_type": "CardDetailsViewModel"
+        },
+        {
+          "name": "_buildInfoSection",
+          "description": "Generates a structured section of information for displaying card details",
+          "parameters": [
+            "String",
+            "List<Widget>"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "_buildInfoRow",
+          "description": "Creates a row for displaying a single piece of card information with a label and value",
+          "parameters": [
+            "String",
+            "String"
+          ],
+          "return_type": "Widget"
+        }
+      ],
+      "dependencies": [
+        "flutter/material.dart",
+        "pokemon_deck/features/card_details/card_details_viewmodel.dart",
+        "pokemon_deck/ui/common/ui_helpers.dart",
+        "stacked/stacked.dart"
+      ]
+    },
+    {
+      "name": "lib/features/card_details/card_details_viewmodel.dart",
+      "description": "A ViewModel responsible for managing the detailed view of a Pokemon card, fetching card data, formatting card attributes, and handling navigation in a Flutter application.",
+      "class_diagram": "@startuml\nclass CardDetailsViewModel {\n  -cardId: String\n  -_pokemonApiService: PokemonApiService\n  -_navigationService: NavigationService\n  -_card: PokemonCard\n  +initialize(): Future<void>\n  +navigateBack(): void\n  +getFormattedTypes(): String\n  +getFormattedWeaknesses(): String\n  +getFormattedResistances(): String\n  +getFormattedAttacks(): String\n}\n@enduml",
+      "methods": [
+        {
+          "name": "initialize",
+          "description": "Fetches the specific Pokemon card details by ID from the API and handles potential loading errors",
+          "parameters": null,
+          "return_type": "Future<void>"
+        },
+        {
+          "name": "navigateBack",
+          "description": "Provides a standard navigation method to return to the previous screen",
+          "parameters": null,
+          "return_type": "void"
+        },
+        {
+          "name": "getFormattedTypes",
+          "description": "Transforms the card's type information into a user-friendly string representation",
+          "parameters": null,
+          "return_type": "String"
+        },
+        {
+          "name": "getFormattedWeaknesses",
+          "description": "Converts the card's weakness data into a readable, formatted string",
+          "parameters": null,
+          "return_type": "String"
+        },
+        {
+          "name": "getFormattedResistances",
+          "description": "Transforms the card's resistance information into a human-readable format",
+          "parameters": null,
+          "return_type": "String"
+        },
+        {
+          "name": "getFormattedAttacks",
+          "description": "Converts the card's attack details into a comprehensive, formatted string",
+          "parameters": null,
+          "return_type": "String"
+        }
+      ],
+      "dependencies": [
+        "pokemon_api_service.dart",
+        "pokemon_card.dart",
+        "stacked/stacked.dart",
+        "stacked_services/stacked_services.dart"
+      ]
     }
   ],
   "dependencies": [
@@ -864,7 +1381,7 @@
       "purpose": "Creating gaps in layouts"
     }
   ],
-  "sequence_diagram": "@startuml\nactor User\nparticipant main\nparticipant AppView\nparticipant StartupView\nparticipant StartupViewModel\nparticipant HomeView\nparticipant HomeViewModel\n\nUser -> main: Launch app\nmain -> AppView: Create and run\nAppView -> StartupView: Initialize\nStartupView -> StartupViewModel: Run startup logic\nStartupViewModel -> HomeView: Navigate on completion\nHomeView -> HomeViewModel: Initialize\nUser -> HomeView: Interact\nHomeView -> HomeViewModel: Handle user actions\nHomeViewModel -> HomeView: Update UI\nHomeViewModel -> DialogService: Show dialog\nHomeViewModel -> BottomSheetService: Show bottom sheet\n@enduml",
-  "state_management_flow": "The application uses the Stacked architecture for state management. Each view has a corresponding ViewModel that handles the business logic and state for that view. The ViewModels are responsible for updating the UI, interacting with services (e.g., DialogService, BottomSheetService), and managing the application's overall state. The app.locator.dart file sets up the necessary dependency injections, allowing the ViewModels to access the required services.",
-  "navigation_flow": "The application's navigation is managed using the Stacked Router, defined in app.router.dart. The main entry point is the AppView, which initializes the Stacked architecture and displays the StartupView. After the startup logic is completed, the StartupViewModel navigates to the HomeView. The HomeView allows the user to interact with the application, triggering updates to the HomeViewModel, which in turn updates the UI and can show dialogs or bottom sheets as needed."
+  "sequence_diagram": "@startuml\nactor User\nparticipant CardSearchView\nparticipant CardSearchViewModel\nparticipant PokemonApiService\nparticipant DeckView\nparticipant DeckRepository\n\nUser -> CardSearchView: Search Cards\nCardSearchView -> CardSearchViewModel: Trigger Search\nCardSearchViewModel -> PokemonApiService: Request Card Data\nPokemonApiService --> CardSearchViewModel: Return Card Results\nCardSearchViewModel --> CardSearchView: Update Search Results\n\nUser -> CardSearchView: Select Card\nCardSearchView -> DeckView: Add to Deck\nDeckView -> DeckRepository: Save Card to Deck\nDeckRepository --> DeckView: Confirm Save\n@enduml",
+  "state_management_flow": "Implemented using Stacked ViewModels for each feature, providing reactive state management. ViewModels handle business logic, data fetching, and UI state. Each view has a corresponding ViewModel that manages its specific state, with reactive rebuilds triggered by state changes. Dependency injection via GetIt allows seamless service and repository access across the application.",
+  "navigation_flow": "Uses Stacked Router for declarative navigation with predefined routes. Navigation between views (CardSearchView, DeckView, CardDetailsView) is managed through NavigationService. Supports push, replace, and pop navigation strategies. Routes are configured in app.router.dart, enabling type-safe navigation and passing parameters between screens."
 }
