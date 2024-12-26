@@ -1,35 +1,46 @@
-import 'package:pokemon_deck/app/app.bottomsheets.dart';
-import 'package:pokemon_deck/app/app.dialogs.dart';
 import 'package:pokemon_deck/app/app.locator.dart';
+import 'package:pokemon_deck/app/app.router.dart';
+import 'package:pokemon_deck/features/deck/deck_repository.dart';
+import 'package:pokemon_deck/models/pokemon_deck.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class HomeViewModel extends BaseViewModel {
-  final _dialogService = locator<DialogService>();
-  final _bottomSheetService = locator<BottomSheetService>();
+  final _deckRepository = locator<DeckRepository>();
+  final _navigationService = locator<NavigationService>();
 
-  String get counterLabel => 'Counter is: $_counter';
+  List<PokemonDeck> _decks = [];
+  String? _errorMessage;
 
-  int _counter = 0;
+  List<PokemonDeck> get decks => _decks;
+  String? get errorMessage => _errorMessage;
 
-  void incrementCounter() {
-    _counter++;
-    rebuildUi();
+  Future<void> initialize() async {
+    setBusy(true);
+    try {
+      _decks = await _deckRepository.getAllDecks();
+      _decks.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = 'Failed to load decks. Please try again.';
+    } finally {
+      setBusy(false);
+    }
   }
 
-  void showDialog() {
-    _dialogService.showCustomDialog(
-      variant: DialogType.infoAlert,
-      title: 'Steve Rocks!',
-      description: 'Give steve $_counter stars on Github',
-    );
+  void navigateToCreateDeck() {
+    _navigationService.navigateToDeckView();
   }
 
-  void showBottomSheet() {
-    _bottomSheetService.showCustomSheet(
-      variant: BottomSheetType.notice,
-      title: 'title',
-      description: 'desc',
-    );
+  void navigateToEditDeck(String deckId) {
+    _navigationService.navigateToDeckView(deckId: deckId);
+  }
+
+  void navigateToCardSearch() {
+    _navigationService.navigateToCardSearchView();
+  }
+
+  Future<void> refreshDecks() async {
+    await initialize();
   }
 }
